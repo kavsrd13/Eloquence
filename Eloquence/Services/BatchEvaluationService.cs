@@ -20,7 +20,7 @@ namespace Eloquence.Services
             _evaluationService = evaluationService;
         }
 
-        public async Task EvaluatePendingTranscriptsAsync()
+        public async Task EvaluatePendingTranscriptsAsync(bool force = false)
         {
             try
             {
@@ -37,6 +37,15 @@ namespace Eloquence.Services
                 if (!pendingRecords.Any())
                 {
                     OnStatusChanged?.Invoke("Batch Evaluation: No pending records.");
+                    return;
+                }
+
+                int totalPendingWords = pendingRecords.Sum(r => r.Text.Split(new[] { ' ', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries).Length);
+                
+                // Only evaluate if we have enough context (to save on system prompt API costs) or if forced
+                if (!force && totalPendingWords < 1000)
+                {
+                    OnStatusChanged?.Invoke($"Batch Evaluation: Buffering ({totalPendingWords}/1000 words).");
                     return;
                 }
 

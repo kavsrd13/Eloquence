@@ -99,7 +99,7 @@ namespace Eloquence
                             await Task.Delay(TimeSpan.FromMinutes(5));
                             if (!TeamsService.IsCallActive)
                             {
-                                await BatchEvalService.EvaluatePendingTranscriptsAsync();
+                                await BatchEvalService.EvaluatePendingTranscriptsAsync(force: true);
                             }
                         });
                     }
@@ -112,7 +112,7 @@ namespace Eloquence
                 Task.Run(async () => 
                 {
                     await Task.Delay(5000); // Wait 5s for UI to load
-                    await BatchEvalService.EvaluatePendingTranscriptsAsync();
+                    await BatchEvalService.EvaluatePendingTranscriptsAsync(force: true);
                 });
 
                 try

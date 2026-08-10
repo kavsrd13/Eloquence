@@ -205,8 +205,7 @@ namespace Eloquence.Services
                     // Auto-trigger evaluation if enabled
                     if (_autoEvaluate && _batchService != null)
                     {
-                        OnStatusChanged?.Invoke("Auto-evaluating...");
-                        await _batchService.EvaluatePendingTranscriptsAsync();
+                        await _batchService.EvaluatePendingTranscriptsAsync(force: false);
                     }
 
                     OnStatusChanged?.Invoke($"Listening (Whisper.net) — buffering {_flushIntervalMinutes}min intervals...");
