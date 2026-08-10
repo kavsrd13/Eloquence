@@ -1,12 +1,12 @@
 using Azure;
 using Azure.AI.OpenAI;
 using OpenAI.Chat;
-using EducatorMetrics.Models;
+using Eloquence.Models;
 using System;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace EducatorMetrics.Services
+namespace Eloquence.Services
 {
     public class EvaluationService
     {
@@ -254,3 +254,4 @@ Return strict JSON.";
         }
     }
 }
+

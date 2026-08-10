@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 
-namespace EducatorMetrics.Services
+namespace Eloquence.Services
 {
     /// <summary>
     /// Polls every 5 seconds to detect if Microsoft Teams has an active audio session.
@@ -163,3 +163,4 @@ namespace EducatorMetrics.Services
         }
     }
 }
+

@@ -1,7 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using EducatorMetrics.Models;
-using EducatorMetrics.Services;
+using Eloquence.Models;
+using Eloquence.Services;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
@@ -11,7 +11,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using System.Windows.Input;
-namespace EducatorMetrics.ViewModels
+namespace Eloquence.ViewModels
 {
     public partial class MainViewModel : ObservableObject
     {
@@ -487,3 +487,4 @@ namespace EducatorMetrics.ViewModels
         }
     }
 }
+

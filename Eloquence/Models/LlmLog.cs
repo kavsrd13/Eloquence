@@ -1,7 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace EducatorMetrics.Models
+namespace Eloquence.Models
 {
     public class LlmLog
     {
@@ -18,3 +18,4 @@ namespace EducatorMetrics.Models
         public string ErrorMessage { get; set; } = string.Empty;
     }
 }
+

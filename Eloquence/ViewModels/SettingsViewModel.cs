@@ -4,7 +4,7 @@ using System.IO;
 using System.Text.Json;
 using System.Windows;
 
-namespace EducatorMetrics.ViewModels
+namespace Eloquence.ViewModels
 {
     public partial class SettingsViewModel : ObservableObject
     {
@@ -69,3 +69,4 @@ namespace EducatorMetrics.ViewModels
         }
     }
 }
+

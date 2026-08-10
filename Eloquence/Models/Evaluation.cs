@@ -1,6 +1,6 @@
 using System;
 
-namespace EducatorMetrics.Models
+namespace Eloquence.Models
 {
     public class Evaluation
     {
@@ -29,3 +29,4 @@ namespace EducatorMetrics.Models
         public string LlmFeedbackJson { get; set; } = string.Empty;
     }
 }
+

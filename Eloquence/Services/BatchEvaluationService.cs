@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using EducatorMetrics.Models;
+using Eloquence.Models;
 using Microsoft.EntityFrameworkCore;
 using System.IO;
 
-namespace EducatorMetrics.Services
+namespace Eloquence.Services
 {
     public class BatchEvaluationService
     {
@@ -166,3 +166,4 @@ namespace EducatorMetrics.Services
         }
     }
 }
+

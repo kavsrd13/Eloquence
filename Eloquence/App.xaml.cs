@@ -1,13 +1,13 @@
 using System.Windows;
 using System.IO;
 using System.Text.Json;
-using EducatorMetrics.Services;
-using EducatorMetrics.Models;
+using Eloquence.Services;
+using Eloquence.Models;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace EducatorMetrics
+namespace Eloquence
 {
     public partial class App : Application
     {
@@ -28,7 +28,7 @@ namespace EducatorMetrics
             }
             catch (Exception ex)
             {
-                System.IO.File.WriteAllText(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "EducatorMetrics_InitCrash.txt"), ex.ToString());
+                System.IO.File.WriteAllText(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "Eloquence_InitCrash.txt"), ex.ToString());
             }
         }
 
@@ -38,13 +38,13 @@ namespace EducatorMetrics
             {
                 AppDomain.CurrentDomain.UnhandledException += (s, args) =>
                 {
-                    System.IO.File.WriteAllText(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Eloquence", "EducatorMetrics_AppDomainCrash.txt"), args.ExceptionObject.ToString());
+                    System.IO.File.WriteAllText(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Eloquence", "Eloquence_AppDomainCrash.txt"), args.ExceptionObject.ToString());
                 };
                 
                 // Global exception handler to prevent silent crashes
                 DispatcherUnhandledException += (s, args) =>
                 {
-                    System.IO.File.WriteAllText(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Eloquence", "EducatorMetrics_Crash.txt"), args.Exception.ToString());
+                    System.IO.File.WriteAllText(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Eloquence", "Eloquence_Crash.txt"), args.Exception.ToString());
                     args.Handled = true; // Prevent app crash
                 };
                 TaskScheduler.UnobservedTaskException += (s, args) =>
@@ -119,7 +119,7 @@ namespace EducatorMetrics
             }
             catch (Exception ex)
             {
-                System.IO.File.WriteAllText(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Eloquence", "EducatorMetrics_Crash.txt"), ex.ToString());
+                System.IO.File.WriteAllText(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Eloquence", "Eloquence_Crash.txt"), ex.ToString());
             }
         }
 
@@ -185,3 +185,4 @@ namespace EducatorMetrics
         }
     }
 }
+

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace EducatorMetrics.Models
+namespace Eloquence.Models
 {
     public class PhraseImprovement
     {
@@ -133,3 +133,4 @@ namespace EducatorMetrics.Models
         public List<string> StrongExplanations { get; set; } = new();
     }
 }
+

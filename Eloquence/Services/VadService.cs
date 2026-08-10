@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace EducatorMetrics.Services
+namespace Eloquence.Services
 {
     public class VadService : IDisposable
     {
@@ -15,7 +15,7 @@ namespace EducatorMetrics.Services
 
         public VadService()
         {
-            using var stream = typeof(VadService).Assembly.GetManifestResourceStream("EducatorMetrics.silero_vad.onnx");
+            using var stream = typeof(VadService).Assembly.GetManifestResourceStream("Eloquence.silero_vad.onnx");
             if (stream == null) throw new Exception("VAD model not found in embedded resources.");
             using var ms = new MemoryStream();
             stream.CopyTo(ms);
@@ -87,3 +87,4 @@ namespace EducatorMetrics.Services
         }
     }
 }
+

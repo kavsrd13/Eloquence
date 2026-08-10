@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.IO;
 
-namespace EducatorMetrics.Services
+namespace Eloquence.Services
 {
     public class DatabaseContext : DbContext
     {
@@ -45,3 +45,4 @@ namespace EducatorMetrics.Services
         }
     }
 }
+

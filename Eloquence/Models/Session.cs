@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace EducatorMetrics.Models
+namespace Eloquence.Models
 {
     public class Session
     {
@@ -16,3 +16,4 @@ namespace EducatorMetrics.Models
         public ICollection<Evaluation> Evaluations { get; set; } = new List<Evaluation>();
     }
 }
+

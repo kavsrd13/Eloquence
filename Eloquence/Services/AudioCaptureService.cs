@@ -3,9 +3,9 @@ using System.IO;
 using System.Linq;
 using System.Speech.Recognition;
 using System.Threading.Tasks;
-using EducatorMetrics.Models;
+using Eloquence.Models;
 
-namespace EducatorMetrics.Services
+namespace Eloquence.Services
 {
     public class AudioCaptureService : IDisposable
     {
@@ -137,3 +137,4 @@ namespace EducatorMetrics.Services
         }
     }
 }
+

@@ -1,7 +1,7 @@
 using System.Windows;
-using EducatorMetrics.ViewModels;
+using Eloquence.ViewModels;
 
-namespace EducatorMetrics
+namespace Eloquence
 {
     public partial class MainWindow : Window
     {

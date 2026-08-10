@@ -1,6 +1,6 @@
 using System;
 
-namespace EducatorMetrics.Models
+namespace Eloquence.Models
 {
     public class TranscriptRecord
     {
@@ -12,3 +12,4 @@ namespace EducatorMetrics.Models
         public bool IsEvaluated { get; set; } = false;
     }
 }
+

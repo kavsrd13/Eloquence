@@ -5,7 +5,7 @@ using System.Text;
 using Whisper.net;
 using Whisper.net.Ggml;
 
-namespace EducatorMetrics.Services
+namespace Eloquence.Services
 {
     public class TranscriptionService : IDisposable
     {
@@ -116,3 +116,4 @@ namespace EducatorMetrics.Services
         }
     }
 }
+
