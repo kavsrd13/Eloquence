@@ -115,38 +115,35 @@ namespace Eloquence.Services
                         SyntacticScore = evalResult.English.SyntacticVariety,
                         ConcisenessScore = evalResult.English.Conciseness,
                         FluencyScore = evalResult.English.Fluency,
+                        CoherenceScore = evalResult.English.CoherenceStructure,
+                        GrammarScore = evalResult.English.GrammaticalAccuracy,
+                        ConfidenceScore = evalResult.English.ConfidenceLanguage,
                         AccuracyScore = evalResult.Tech.ConceptualAccuracy,
                         ArchitectureScore = evalResult.Tech.ArchitecturalClarity,
                         PedagogyScore = evalResult.Tech.PedagogicalScaffolding,
                         RealWorldScore = evalResult.Tech.RealWorldApplication,
                         AnalogyScore = evalResult.Tech.AnalogyEffectiveness,
+                        DepthScore = evalResult.Tech.DepthOfExplanation,
+                        TradeoffScore = evalResult.Tech.TradeoffAnalysis,
                         LlmFeedbackJson = JsonSerializer.Serialize(new { English = evalResult.English, Tech = evalResult.Tech })
                     };
 
                     db.Evaluations.Add(evaluation);
                     
-                    var englishLog = new LlmLog 
+                    foreach (var tokenUsage in evalResult.TokenUsage)
                     {
-                        Timestamp = DateTime.UtcNow,
-                        Model = deploymentName,
-                        PromptTokens = evalResult.EngPromptTokens,
-                        CompletionTokens = evalResult.EngCompTokens,
-                        TotalTokens = evalResult.EngPromptTokens + evalResult.EngCompTokens,
-                        IsSuccess = true
-                    };
-                    
-                    var techLog = new LlmLog 
-                    {
-                        Timestamp = DateTime.UtcNow,
-                        Model = deploymentName,
-                        PromptTokens = evalResult.TechPromptTokens,
-                        CompletionTokens = evalResult.TechCompTokens,
-                        TotalTokens = evalResult.TechPromptTokens + evalResult.TechCompTokens,
-                        IsSuccess = true
-                    };
-
-                    db.LlmLogs.Add(englishLog);
-                    db.LlmLogs.Add(techLog);
+                        var log = new LlmLog 
+                        {
+                            Timestamp = DateTime.UtcNow,
+                            Model = deploymentName,
+                            AgentName = tokenUsage.AgentName,
+                            PromptTokens = tokenUsage.PromptTokens,
+                            CompletionTokens = tokenUsage.CompTokens,
+                            TotalTokens = tokenUsage.PromptTokens + tokenUsage.CompTokens,
+                            IsSuccess = true
+                        };
+                        db.LlmLogs.Add(log);
+                    }
 
                     foreach (var record in batch)
                     {
@@ -166,4 +163,3 @@ namespace Eloquence.Services
         }
     }
 }
-

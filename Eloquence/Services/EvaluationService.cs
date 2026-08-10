@@ -3,6 +3,7 @@ using Azure.AI.OpenAI;
 using OpenAI.Chat;
 using Eloquence.Models;
 using System;
+using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -28,28 +29,82 @@ namespace Eloquence.Services
             }
         }
 
-        public async Task<(EnglishEvaluationResult English, TechEvaluationResult Tech, int EngPromptTokens, int EngCompTokens, int TechPromptTokens, int TechCompTokens)> EvaluateAsync(string deploymentName, string transcript)
+        public async Task<(EnglishEvaluationResult English, TechEvaluationResult Tech, List<(string AgentName, int PromptTokens, int CompTokens)> TokenUsage)> EvaluateAsync(string deploymentName, string transcript)
         {
             if (_client == null)
-                return (new EnglishEvaluationResult(), new TechEvaluationResult(), 0, 0, 0, 0);
+                return (new EnglishEvaluationResult(), new TechEvaluationResult(), new List<(string, int, int)>());
             
             var chatClient = _client.GetChatClient(deploymentName);
             
-            var englishTask = EvaluateEnglishAsync(chatClient, transcript);
-            var techTask = EvaluateTechAsync(chatClient, transcript);
+            var task1 = RunEnglishScorerAsync(chatClient, transcript);
+            var task2 = RunEnglishCoachAsync(chatClient, transcript);
+            var task3 = RunConfidenceAnalystAsync(chatClient, transcript);
+            var task4 = RunTechScorerAsync(chatClient, transcript);
+            var task5 = RunTechReviewerAsync(chatClient, transcript);
 
-            await Task.WhenAll(englishTask, techTask);
-            var engResult = englishTask.Result;
-            var techResult = techTask.Result;
-            return (engResult.Result, techResult.Result, engResult.PromptTokens, engResult.CompletionTokens, techResult.PromptTokens, techResult.CompletionTokens);
+            await Task.WhenAll(task1, task2, task3, task4, task5);
+
+            var result1 = task1.Result;
+            var result2 = task2.Result;
+            var result3 = task3.Result;
+            var result4 = task4.Result;
+            var result5 = task5.Result;
+
+            var englishResult = new EnglishEvaluationResult
+            {
+                LexicalPrecision = result1.Result?.LexicalPrecision ?? 0,
+                DiscourseMarkers = result1.Result?.DiscourseMarkers ?? 0,
+                SyntacticVariety = result1.Result?.SyntacticVariety ?? 0,
+                Conciseness = result1.Result?.Conciseness ?? 0,
+                Fluency = result1.Result?.Fluency ?? 0,
+                CoherenceStructure = result1.Result?.CoherenceStructure ?? 0,
+                GrammaticalAccuracy = result1.Result?.GrammaticalAccuracy ?? 0,
+                ConfidenceLanguage = result1.Result?.ConfidenceLanguage ?? 0,
+
+                PhraseImprovements = result2.Result?.PhraseImprovements,
+                WeakVocabulary = result2.Result?.WeakVocabulary,
+                BloatedSentences = result2.Result?.BloatedSentences,
+                CriticalMistakes = result2.Result?.CriticalMistakes,
+
+                FillerWordsDetected = result3.Result?.FillerWordsDetected,
+                RepetitiveWords = result3.Result?.RepetitiveWords,
+                HedgingPhrases = result3.Result?.HedgingPhrases
+            };
+
+            var techResult = new TechEvaluationResult
+            {
+                ConceptualAccuracy = result4.Result?.ConceptualAccuracy ?? 0,
+                ArchitecturalClarity = result4.Result?.ArchitecturalClarity ?? 0,
+                PedagogicalScaffolding = result4.Result?.PedagogicalScaffolding ?? 0,
+                RealWorldApplication = result4.Result?.RealWorldApplication ?? 0,
+                AnalogyEffectiveness = result4.Result?.AnalogyEffectiveness ?? 0,
+                DepthOfExplanation = result4.Result?.DepthOfExplanation ?? 0,
+                TradeoffAnalysis = result4.Result?.TradeoffAnalysis ?? 0,
+
+                TechnicalInaccuracies = result5.Result?.TechnicalInaccuracies,
+                TechnicalMistakes = result5.Result?.TechnicalMistakes,
+                AnalogyImprovements = result5.Result?.AnalogyImprovements,
+                StrongExplanations = result5.Result?.StrongExplanations
+            };
+
+            var tokenUsage = new List<(string AgentName, int PromptTokens, int CompTokens)>
+            {
+                ("EnglishScorer", result1.PromptTokens, result1.CompletionTokens),
+                ("EnglishCoach", result2.PromptTokens, result2.CompletionTokens),
+                ("ConfidenceAnalyst", result3.PromptTokens, result3.CompletionTokens),
+                ("TechScorer", result4.PromptTokens, result4.CompletionTokens),
+                ("TechReviewer", result5.PromptTokens, result5.CompletionTokens)
+            };
+
+            return (englishResult, techResult, tokenUsage);
         }
 
-        private async Task<(EnglishEvaluationResult Result, int PromptTokens, int CompletionTokens)> EvaluateEnglishAsync(ChatClient client, string transcript)
+        private async Task<(EnglishEvaluationResult Result, int PromptTokens, int CompletionTokens)> RunEnglishScorerAsync(ChatClient client, string transcript)
         {
             var options = new ChatCompletionOptions
             {
                 ResponseFormat = ChatResponseFormat.CreateJsonSchemaFormat(
-                    "english_eval", 
+                    "english_scorer", 
                     BinaryData.FromObjectAsJson(new {
                         type = "object",
                         properties = new {
@@ -58,20 +113,36 @@ namespace Eloquence.Services
                             SyntacticVariety = new { type = "integer" },
                             Conciseness = new { type = "integer" },
                             Fluency = new { type = "integer" },
-                            FillerWordsDetected = new { type = "array", items = new { type = "string" } },
-                            RepetitiveWords = new { 
-                                type = "array", 
-                                items = new { 
-                                    type = "object", 
-                                    properties = new {
-                                        Word = new { type = "string" },
-                                        Count = new { type = "integer" },
-                                        SuggestedAlternatives = new { type = "array", items = new { type = "string" } }
-                                    },
-                                    required = new[] { "Word", "Count", "SuggestedAlternatives" },
-                                    additionalProperties = false
-                                } 
-                            },
+                            CoherenceStructure = new { type = "integer" },
+                            GrammaticalAccuracy = new { type = "integer" },
+                            ConfidenceLanguage = new { type = "integer" }
+                        },
+                        required = new[] { "LexicalPrecision", "DiscourseMarkers", "SyntacticVariety", "Conciseness", "Fluency", "CoherenceStructure", "GrammaticalAccuracy", "ConfidenceLanguage" },
+                        additionalProperties = false
+                    }),
+                    "English Scorer Schema",
+                    true)
+            };
+
+            var systemPrompt = @"You are a strict English Scorer. Rate the transcript on the 8 metrics strictly from 1-100.";
+            var response = await client.CompleteChatAsync(new ChatMessage[] { new SystemChatMessage(systemPrompt), new UserChatMessage(transcript) }, options);
+            
+            if (response.Value.Content == null || response.Value.Content.Count == 0)
+                return (new EnglishEvaluationResult(), 0, 0);
+
+            var result = JsonSerializer.Deserialize<EnglishEvaluationResult>(response.Value.Content[0].Text);
+            return (result ?? new EnglishEvaluationResult(), response.Value.Usage.InputTokenCount, response.Value.Usage.OutputTokenCount);
+        }
+
+        private async Task<(EnglishEvaluationResult Result, int PromptTokens, int CompletionTokens)> RunEnglishCoachAsync(ChatClient client, string transcript)
+        {
+            var options = new ChatCompletionOptions
+            {
+                ResponseFormat = ChatResponseFormat.CreateJsonSchemaFormat(
+                    "english_coach", 
+                    BinaryData.FromObjectAsJson(new {
+                        type = "object",
+                        properties = new {
                             WeakVocabulary = new { 
                                 type = "array", 
                                 items = new { 
@@ -127,55 +198,82 @@ namespace Eloquence.Services
                                 }
                             }
                         },
-                        required = new[] { "LexicalPrecision", "DiscourseMarkers", "SyntacticVariety", "Conciseness", "Fluency", "FillerWordsDetected", "RepetitiveWords", "WeakVocabulary", "PhraseImprovements", "BloatedSentences", "CriticalMistakes" },
+                        required = new[] { "PhraseImprovements", "WeakVocabulary", "BloatedSentences", "CriticalMistakes" },
                         additionalProperties = false
                     }),
-                    "English Evaluation Schema",
+                    "English Coach Schema",
                     true)
             };
 
-            var systemPrompt = @"You are an EXTREMELY STRICT English communication coach evaluating a technical trainer.
-You are NOT kind. You are NOT forgiving. You are a perfectionist.
-
-SCORING RULES (integers 1-100):
-- 1-20: Terrible. Constant mistakes, incoherent.
-- 21-40: Below average. Many filler words, poor vocabulary, rambling.
-- 41-60: Average. Acceptable but clearly needs improvement.
-- 61-80: Good. Minor issues. Most speakers fall here.
-- 81-100: Exceptional. ONLY if the speech is genuinely polished, precise, and professional. Do NOT give 80+ unless truly deserved.
-
-YOUR TASKS:
-1. Score each metric STRICTLY. Do NOT be generous. An average speaker should get 40-55.
-2. Extract EVERY SINGLE filler word (um, uh, like, basically, actually, you know, so, right, I mean, kind of, sort of, literally, honestly, obviously). Even one 'um' must be logged.
-3. Track 'RepetitiveWords'. Identify any substantive words the speaker overuses in this chunk. Provide the word, the number of times it was used, and a list of powerful alternatives.
-4. Extract 'WeakVocabulary'. Find at least 10 to 15 weak, average, or uninspiring words/phrases used in the text. Suggest sophisticated, high-end vocabulary alternatives. Rate the OriginalPhrase and ImprovedPhrase.
-5. ONLY provide 'PhraseImprovements' for phrases that are TRULY TERRIBLE — meaning they are fundamentally grammatically incorrect, highly unprofessional, or extremely repetitive. Do NOT suggest improvements for sentences that are just 'okay' or 'average'. We only want to highlight the worst offenders. Score the phrase (1-100), provide the improved phrase, and explain your reasoning.
-6. Identify the most bloated, rambling sentences and rewrite them to be 50% shorter while keeping meaning.
-7. MOST IMPORTANTLY: Find the speaker's CRITICAL MISTAKES — the exact phrases where they made a grammar error, used completely wrong words, said something confusing, or communicated so poorly that a student would be misled. Quote the exact problematic phrase in 'WhatYouSaid', provide the correct version in 'WhatYouShouldSay', explain why it matters, and rate severity as 'Critical', 'High', or 'Medium'.
-
-Return strict JSON.";
-
-            var messages = new ChatMessage[]
-            {
-                new SystemChatMessage(systemPrompt),
-                new UserChatMessage(transcript)
-            };
-
-            var response = await client.CompleteChatAsync(messages, options);
+            var systemPrompt = @"You are an English Coach. Only flag truly terrible phrases.";
+            var response = await client.CompleteChatAsync(new ChatMessage[] { new SystemChatMessage(systemPrompt), new UserChatMessage(transcript) }, options);
+            
             if (response.Value.Content == null || response.Value.Content.Count == 0)
                 return (new EnglishEvaluationResult(), 0, 0);
 
-            var content = response.Value.Content[0].Text;
-            var result = JsonSerializer.Deserialize<EnglishEvaluationResult>(content);
+            var result = JsonSerializer.Deserialize<EnglishEvaluationResult>(response.Value.Content[0].Text);
             return (result ?? new EnglishEvaluationResult(), response.Value.Usage.InputTokenCount, response.Value.Usage.OutputTokenCount);
         }
 
-        private async Task<(TechEvaluationResult Result, int PromptTokens, int CompletionTokens)> EvaluateTechAsync(ChatClient client, string transcript)
+        private async Task<(EnglishEvaluationResult Result, int PromptTokens, int CompletionTokens)> RunConfidenceAnalystAsync(ChatClient client, string transcript)
         {
             var options = new ChatCompletionOptions
             {
                 ResponseFormat = ChatResponseFormat.CreateJsonSchemaFormat(
-                    "tech_eval", 
+                    "confidence_analyst", 
+                    BinaryData.FromObjectAsJson(new {
+                        type = "object",
+                        properties = new {
+                            FillerWordsDetected = new { type = "array", items = new { type = "string" } },
+                            RepetitiveWords = new { 
+                                type = "array", 
+                                items = new { 
+                                    type = "object", 
+                                    properties = new {
+                                        Word = new { type = "string" },
+                                        Count = new { type = "integer" },
+                                        SuggestedAlternatives = new { type = "array", items = new { type = "string" } }
+                                    },
+                                    required = new[] { "Word", "Count", "SuggestedAlternatives" },
+                                    additionalProperties = false
+                                } 
+                            },
+                            HedgingPhrases = new {
+                                type = "array",
+                                items = new {
+                                    type = "object",
+                                    properties = new {
+                                        Original = new { type = "string" },
+                                        Assertive = new { type = "string" }
+                                    },
+                                    required = new[] { "Original", "Assertive" },
+                                    additionalProperties = false
+                                }
+                            }
+                        },
+                        required = new[] { "FillerWordsDetected", "RepetitiveWords", "HedgingPhrases" },
+                        additionalProperties = false
+                    }),
+                    "Confidence Analyst Schema",
+                    true)
+            };
+
+            var systemPrompt = @"You are a Confidence Analyst. Focus on detecting hedging language like 'I think', 'maybe', 'sort of', 'kind of', 'I guess' and suggesting assertive rewrites.";
+            var response = await client.CompleteChatAsync(new ChatMessage[] { new SystemChatMessage(systemPrompt), new UserChatMessage(transcript) }, options);
+            
+            if (response.Value.Content == null || response.Value.Content.Count == 0)
+                return (new EnglishEvaluationResult(), 0, 0);
+
+            var result = JsonSerializer.Deserialize<EnglishEvaluationResult>(response.Value.Content[0].Text);
+            return (result ?? new EnglishEvaluationResult(), response.Value.Usage.InputTokenCount, response.Value.Usage.OutputTokenCount);
+        }
+
+        private async Task<(TechEvaluationResult Result, int PromptTokens, int CompletionTokens)> RunTechScorerAsync(ChatClient client, string transcript)
+        {
+            var options = new ChatCompletionOptions
+            {
+                ResponseFormat = ChatResponseFormat.CreateJsonSchemaFormat(
+                    "tech_scorer", 
                     BinaryData.FromObjectAsJson(new {
                         type = "object",
                         properties = new {
@@ -184,6 +282,35 @@ Return strict JSON.";
                             PedagogicalScaffolding = new { type = "integer" },
                             RealWorldApplication = new { type = "integer" },
                             AnalogyEffectiveness = new { type = "integer" },
+                            DepthOfExplanation = new { type = "integer" },
+                            TradeoffAnalysis = new { type = "integer" }
+                        },
+                        required = new[] { "ConceptualAccuracy", "ArchitecturalClarity", "PedagogicalScaffolding", "RealWorldApplication", "AnalogyEffectiveness", "DepthOfExplanation", "TradeoffAnalysis" },
+                        additionalProperties = false
+                    }),
+                    "Tech Scorer Schema",
+                    true)
+            };
+
+            var systemPrompt = @"You are a Tech Scorer. Rate the transcript strictly on 7 metrics from 1-100.";
+            var response = await client.CompleteChatAsync(new ChatMessage[] { new SystemChatMessage(systemPrompt), new UserChatMessage(transcript) }, options);
+            
+            if (response.Value.Content == null || response.Value.Content.Count == 0)
+                return (new TechEvaluationResult(), 0, 0);
+
+            var result = JsonSerializer.Deserialize<TechEvaluationResult>(response.Value.Content[0].Text);
+            return (result ?? new TechEvaluationResult(), response.Value.Usage.InputTokenCount, response.Value.Usage.OutputTokenCount);
+        }
+
+        private async Task<(TechEvaluationResult Result, int PromptTokens, int CompletionTokens)> RunTechReviewerAsync(ChatClient client, string transcript)
+        {
+            var options = new ChatCompletionOptions
+            {
+                ResponseFormat = ChatResponseFormat.CreateJsonSchemaFormat(
+                    "tech_reviewer", 
+                    BinaryData.FromObjectAsJson(new {
+                        type = "object",
+                        properties = new {
                             TechnicalInaccuracies = new { type = "array", items = new { type = "string" } },
                             TechnicalMistakes = new {
                                 type = "array",
@@ -212,46 +339,21 @@ Return strict JSON.";
                             },
                             StrongExplanations = new { type = "array", items = new { type = "string" } }
                         },
-                        required = new[] { "ConceptualAccuracy", "ArchitecturalClarity", "PedagogicalScaffolding", "RealWorldApplication", "AnalogyEffectiveness", "TechnicalInaccuracies", "TechnicalMistakes", "AnalogyImprovements", "StrongExplanations" },
+                        required = new[] { "TechnicalInaccuracies", "TechnicalMistakes", "AnalogyImprovements", "StrongExplanations" },
                         additionalProperties = false
                     }),
-                    "Tech Evaluation Schema",
+                    "Tech Reviewer Schema",
                     true)
             };
 
-            var systemPrompt = @"You are an EXTREMELY STRICT senior technical reviewer evaluating an AI and software engineering trainer's spoken explanations.
-You have 20+ years of industry experience. You do NOT tolerate sloppy explanations.
-
-SCORING RULES (integers 1-100):
-- 1-20: Dangerously wrong. Would mislead students.
-- 21-40: Weak. Vague explanations, missing key concepts.
-- 41-60: Average. Correct but surface-level.
-- 61-80: Good. Clear and mostly accurate. Minor improvements possible.
-- 81-100: Expert-level. ONLY if the explanation is precise, complete, and uses real-world grounding. Rarely deserved.
-
-YOUR TASKS:
-1. Score each metric STRICTLY. Average trainers should get 45-55.
-2. List any technical inaccuracies, misconceptions, or oversimplifications that could mislead students.
-3. For each technical mistake, quote the EXACT problematic phrase in 'WhatYouSaid', provide the technically correct statement in 'WhatYouShouldSay', and explain why the distinction matters for students.
-4. Suggest better analogies for complex topics that were poorly explained.
-5. Highlight what was explained exceptionally well (be specific, quote the good explanation).
-
-Return strict JSON.";
-
-            var messages = new ChatMessage[]
-            {
-                new SystemChatMessage(systemPrompt),
-                new UserChatMessage(transcript)
-            };
-
-            var response = await client.CompleteChatAsync(messages, options);
+            var systemPrompt = @"You are a Tech Reviewer. Identify inaccuracies, mistakes, suggest analogies and highlight strong explanations.";
+            var response = await client.CompleteChatAsync(new ChatMessage[] { new SystemChatMessage(systemPrompt), new UserChatMessage(transcript) }, options);
+            
             if (response.Value.Content == null || response.Value.Content.Count == 0)
                 return (new TechEvaluationResult(), 0, 0);
 
-            var content = response.Value.Content[0].Text;
-            var result = JsonSerializer.Deserialize<TechEvaluationResult>(content);
+            var result = JsonSerializer.Deserialize<TechEvaluationResult>(response.Value.Content[0].Text);
             return (result ?? new TechEvaluationResult(), response.Value.Usage.InputTokenCount, response.Value.Usage.OutputTokenCount);
         }
     }
 }
-

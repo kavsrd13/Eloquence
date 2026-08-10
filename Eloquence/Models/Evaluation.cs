@@ -18,12 +18,21 @@ namespace Eloquence.Models
         public int ConcisenessScore { get; set; }
         public int FluencyScore { get; set; }
         
+        // New English Metrics (v2)
+        public int CoherenceScore { get; set; }
+        public int GrammarScore { get; set; }
+        public int ConfidenceScore { get; set; }
+
         // Tech Agent Scores (kept permanently)
         public int AccuracyScore { get; set; }
         public int ArchitectureScore { get; set; }
         public int PedagogyScore { get; set; }
         public int RealWorldScore { get; set; }
         public int AnalogyScore { get; set; }
+
+        // New Tech Metrics (v2)
+        public int DepthScore { get; set; }
+        public int TradeoffScore { get; set; }
         
         // Raw JSON output (kept permanently for report generation)
         public string LlmFeedbackJson { get; set; } = string.Empty;

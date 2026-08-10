@@ -20,6 +20,12 @@ namespace Eloquence.ViewModels
         [ObservableProperty]
         private bool _isTelemetryEnabled = true;
 
+        [ObservableProperty]
+        private int _transcriptionIntervalMinutes = 10;
+
+        [ObservableProperty]
+        private bool _autoEvaluate = true;
+
         public SettingsViewModel()
         {
             LoadSettings();
@@ -49,6 +55,10 @@ namespace Eloquence.ViewModels
                         DeploymentName = dn.GetString() ?? string.Empty;
                     if (doc.RootElement.TryGetProperty("IsTelemetryEnabled", out var te))
                         IsTelemetryEnabled = te.GetBoolean();
+                    if (doc.RootElement.TryGetProperty("TranscriptionIntervalMinutes", out var ti))
+                        TranscriptionIntervalMinutes = System.Math.Clamp(ti.GetInt32(), 5, 30);
+                    if (doc.RootElement.TryGetProperty("AutoEvaluate", out var ae))
+                        AutoEvaluate = ae.GetBoolean();
                 }
                 catch { }
             }
@@ -62,11 +72,12 @@ namespace Eloquence.ViewModels
                 AzureOpenAIEndpoint = this.AzureOpenAIEndpoint,
                 AzureOpenAIKey = this.AzureOpenAIKey,
                 DeploymentName = this.DeploymentName,
-                IsTelemetryEnabled = this.IsTelemetryEnabled
+                IsTelemetryEnabled = this.IsTelemetryEnabled,
+                TranscriptionIntervalMinutes = this.TranscriptionIntervalMinutes,
+                AutoEvaluate = this.AutoEvaluate
             });
             File.WriteAllText(path, json);
             MessageBox.Show("Settings saved. Please restart the application to apply changes.", "Settings", MessageBoxButton.OK, MessageBoxImage.Information);
         }
     }
 }
-

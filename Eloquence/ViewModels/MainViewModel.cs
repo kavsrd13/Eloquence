@@ -43,16 +43,23 @@ namespace Eloquence.ViewModels
         private ObservableCollection<TechMistake> _techMistakes = new();
 
         [ObservableProperty]
-        private ISeries[] _englishSeries = new ISeries[0];
+        private ObservableCollection<SkillCardItem> _skillCards = new();
+
+        [ObservableProperty] private string _engLevel = string.Empty;
+        [ObservableProperty] private string _techLevel = string.Empty;
+        [ObservableProperty] private string _engLevelColor = string.Empty;
+        [ObservableProperty] private string _techLevelColor = string.Empty;
 
         [ObservableProperty]
-        private ISeries[] _techSeries = new ISeries[0];
+        private DateTime? _selectedTelemetryDate;
 
         [ObservableProperty]
-        private LiveChartsCore.SkiaSharpView.VisualElements.LabelVisual _englishAxes = null!;
+        private ObservableCollection<LlmLog> _filteredLlmLogs = new();
 
-        [ObservableProperty]
-        private LiveChartsCore.SkiaSharpView.VisualElements.LabelVisual _techAxes = null!;
+        [ObservableProperty] private int _telTotalTokens;
+        [ObservableProperty] private int _telTotalCalls;
+        [ObservableProperty] private int _telAvgTokens;
+        [ObservableProperty] private string _telSuccessRate = string.Empty;
 
         [ObservableProperty]
         private ISeries[] _engTrendSeries = new ISeries[0];
@@ -76,7 +83,9 @@ namespace Eloquence.ViewModels
         private string _techDelta = string.Empty;
 
         [ObservableProperty] private int _avgLex; [ObservableProperty] private int _avgDis; [ObservableProperty] private int _avgSyn; [ObservableProperty] private int _avgCon; [ObservableProperty] private int _avgFlu;
+        [ObservableProperty] private int _avgCoh; [ObservableProperty] private int _avgGra; [ObservableProperty] private int _avgConf;
         [ObservableProperty] private int _avgAcc; [ObservableProperty] private int _avgArc; [ObservableProperty] private int _avgPed; [ObservableProperty] private int _avgRea; [ObservableProperty] private int _avgAna;
+        [ObservableProperty] private int _avgDep; [ObservableProperty] private int _avgTra;
 
         [ObservableProperty]
         private string _statusText = "Initializing...";
@@ -90,6 +99,7 @@ namespace Eloquence.ViewModels
 
         public IRelayCommand RunEvaluationCommand { get; }
         public ICommand ToggleRecordingCommand { get; }
+        public ICommand ShowAllTelemetryCommand { get; }
 
         public MainViewModel(AudioCaptureService audioService, TeamsDetectorService teamsService, BatchEvaluationService batchEvalService)
         {
@@ -98,6 +108,7 @@ namespace Eloquence.ViewModels
 
             ToggleRecordingCommand = new RelayCommand(ToggleRecording);
             RunEvaluationCommand = new RelayCommand(async () => await RunEvaluation());
+            ShowAllTelemetryCommand = new RelayCommand(ShowAllTelemetry);
 
             LoadSettings();
             LoadData();
@@ -213,6 +224,7 @@ namespace Eloquence.ViewModels
 
             var logsData = db.LlmLogs.OrderByDescending(l => l.Timestamp).ToList();
             LlmLogs = new ObservableCollection<LlmLog>(logsData);
+            FilterTelemetryLogs();
 
             var grouped = db.TranscriptRecords
                                    .OrderBy(t => t.Timestamp)
@@ -318,65 +330,25 @@ namespace Eloquence.ViewModels
             var avgSyntactic = (int)Evaluations.Average(e => e.SyntacticScore);
             var avgConciseness = (int)Evaluations.Average(e => e.ConcisenessScore);
             var avgFluency = (int)Evaluations.Average(e => e.FluencyScore);
+            var avgCoherence = (int)Evaluations.Average(e => e.CoherenceScore);
+            var avgGrammar = (int)Evaluations.Average(e => e.GrammarScore);
+            var avgConfidence = (int)Evaluations.Average(e => e.ConfidenceScore);
 
             var avgAccuracy = (int)Evaluations.Average(e => e.AccuracyScore);
             var avgArchitecture = (int)Evaluations.Average(e => e.ArchitectureScore);
             var avgPedagogy = (int)Evaluations.Average(e => e.PedagogyScore);
             var avgRealWorld = (int)Evaluations.Average(e => e.RealWorldScore);
             var avgAnalogy = (int)Evaluations.Average(e => e.AnalogyScore);
+            var avgDepth = (int)Evaluations.Average(e => e.DepthScore);
+            var avgTradeoff = (int)Evaluations.Average(e => e.TradeoffScore);
 
             var themeForeground = _isDarkTheme ? new SkiaSharp.SKColor(255, 255, 255) : new SkiaSharp.SKColor(17, 24, 39);
             var themeAxis = _isDarkTheme ? new SkiaSharp.SKColor(212, 212, 216) : new SkiaSharp.SKColor(107, 114, 128);
 
-            EnglishAxes = new LiveChartsCore.SkiaSharpView.VisualElements.LabelVisual
-            {
-                Text = "Lexical, Discourse, Syntactic, Conciseness, Fluency",
-                TextSize = 14,
-                Paint = new SolidColorPaint(themeForeground)
-            };
-            TechAxes = new LiveChartsCore.SkiaSharpView.VisualElements.LabelVisual
-            {
-                Text = "Accuracy, Architecture, Pedagogy, Real World, Analogy",
-                TextSize = 14,
-                Paint = new SolidColorPaint(themeForeground)
-            };
-
-            var englishValues = new double[]
-            {
-                avgLexical, avgDiscourse, avgSyntactic, avgConciseness, avgFluency
-            };
-
-            var techValues = new double[]
-            {
-                avgAccuracy, avgArchitecture, avgPedagogy, avgRealWorld, avgAnalogy
-            };
-
-            EnglishSeries = new ISeries[]
-            {
-                new PolarLineSeries<double>
-                {
-                    Values = englishValues,
-                    LineSmoothness = 1,
-                    GeometrySize = 10,
-                    Fill = new SolidColorPaint(new SkiaSharp.SKColor(96, 165, 250, 90)),
-                    Stroke = new SolidColorPaint(new SkiaSharp.SKColor(96, 165, 250), 3)
-                }
-            };
-
-            TechSeries = new ISeries[]
-            {
-                new PolarLineSeries<double>
-                {
-                    Values = techValues,
-                    LineSmoothness = 1,
-                    GeometrySize = 10,
-                    Fill = new SolidColorPaint(new SkiaSharp.SKColor(52, 211, 153, 90)),
-                    Stroke = new SolidColorPaint(new SkiaSharp.SKColor(52, 211, 153), 3)
-                }
-            };
-
             AvgLex = avgLexical; AvgDis = avgDiscourse; AvgSyn = avgSyntactic; AvgCon = avgConciseness; AvgFlu = avgFluency;
+            AvgCoh = avgCoherence; AvgGra = avgGrammar; AvgConf = avgConfidence;
             AvgAcc = avgAccuracy; AvgArc = avgArchitecture; AvgPed = avgPedagogy; AvgRea = avgRealWorld; AvgAna = avgAnalogy;
+            AvgDep = avgDepth; AvgTra = avgTradeoff;
 
             using var db = new DatabaseContext();
             var allEvals = db.Evaluations.Include(e => e.Session).ToList();
@@ -392,12 +364,17 @@ namespace Eloquence.ViewModels
             var synTrend = new List<double>();
             var conTrend = new List<double>();
             var fluTrend = new List<double>();
+            var cohTrend = new List<double>();
+            var graTrend = new List<double>();
+            var confTrend = new List<double>();
             
             var accTrend = new List<double>();
             var arcTrend = new List<double>();
             var pedTrend = new List<double>();
             var reaTrend = new List<double>();
             var anaTrend = new List<double>();
+            var depTrend = new List<double>();
+            var traTrend = new List<double>();
 
             var engTrend = new List<double>();
             var techTrend = new List<double>();
@@ -411,15 +388,20 @@ namespace Eloquence.ViewModels
                 synTrend.Add(group.Average(e => e.SyntacticScore));
                 conTrend.Add(group.Average(e => e.ConcisenessScore));
                 fluTrend.Add(group.Average(e => e.FluencyScore));
+                cohTrend.Add(group.Average(e => e.CoherenceScore));
+                graTrend.Add(group.Average(e => e.GrammarScore));
+                confTrend.Add(group.Average(e => e.ConfidenceScore));
                 
                 accTrend.Add(group.Average(e => e.AccuracyScore));
                 arcTrend.Add(group.Average(e => e.ArchitectureScore));
                 pedTrend.Add(group.Average(e => e.PedagogyScore));
                 reaTrend.Add(group.Average(e => e.RealWorldScore));
                 anaTrend.Add(group.Average(e => e.AnalogyScore));
+                depTrend.Add(group.Average(e => e.DepthScore));
+                traTrend.Add(group.Average(e => e.TradeoffScore));
                 
-                engTrend.Add(group.Average(e => (e.LexicalScore + e.DiscourseScore + e.SyntacticScore + e.ConcisenessScore + e.FluencyScore) / 5.0));
-                techTrend.Add(group.Average(e => (e.AccuracyScore + e.ArchitectureScore + e.PedagogyScore + e.RealWorldScore + e.AnalogyScore) / 5.0));
+                engTrend.Add(group.Average(e => (e.LexicalScore + e.DiscourseScore + e.SyntacticScore + e.ConcisenessScore + e.FluencyScore + e.CoherenceScore + e.GrammarScore + e.ConfidenceScore) / 8.0));
+                techTrend.Add(group.Average(e => (e.AccuracyScore + e.ArchitectureScore + e.PedagogyScore + e.RealWorldScore + e.AnalogyScore + e.DepthScore + e.TradeoffScore) / 7.0));
             }
 
             int allTimeEngAvg = engTrend.Any() ? (int)engTrend.Average() : 0;
@@ -456,6 +438,90 @@ namespace Eloquence.ViewModels
                     LabelsPaint = new SolidColorPaint(themeAxis)
                 }
             };
+            
+            var engLevelInfo = SkillCardItem.GetLevel(CurrentEngAvg);
+            EngLevel = engLevelInfo.Level;
+            EngLevelColor = engLevelInfo.Color;
+            
+            var techLevelInfo = SkillCardItem.GetLevel(CurrentTechAvg);
+            TechLevel = techLevelInfo.Level;
+            TechLevelColor = techLevelInfo.Color;
+
+            var cards = new List<SkillCardItem>
+            {
+                CreateSkillCard("Lexical Range", "English", avgLexical, lexTrend),
+                CreateSkillCard("Discourse", "English", avgDiscourse, disTrend),
+                CreateSkillCard("Syntactic", "English", avgSyntactic, synTrend),
+                CreateSkillCard("Conciseness", "English", avgConciseness, conTrend),
+                CreateSkillCard("Fluency", "English", avgFluency, fluTrend),
+                CreateSkillCard("Coherence", "English", avgCoherence, cohTrend),
+                CreateSkillCard("Grammar", "English", avgGrammar, graTrend),
+                CreateSkillCard("Confidence", "English", avgConfidence, confTrend),
+                
+                CreateSkillCard("Accuracy", "Tech", avgAccuracy, accTrend),
+                CreateSkillCard("Architecture", "Tech", avgArchitecture, arcTrend),
+                CreateSkillCard("Pedagogy", "Tech", avgPedagogy, pedTrend),
+                CreateSkillCard("Real World", "Tech", avgRealWorld, reaTrend),
+                CreateSkillCard("Analogy", "Tech", avgAnalogy, anaTrend),
+                CreateSkillCard("Depth", "Tech", avgDepth, depTrend),
+                CreateSkillCard("Tradeoff", "Tech", avgTradeoff, traTrend)
+            };
+            
+            SkillCards = new ObservableCollection<SkillCardItem>(cards.OrderBy(c => c.Score));
+        }
+
+        private SkillCardItem CreateSkillCard(string name, string category, int currentScore, List<double>? trend)
+        {
+            int delta = 0;
+            if (trend != null && trend.Count >= 2)
+            {
+                var prev = (int)trend[trend.Count - 2];
+                delta = currentScore - prev;
+            }
+            
+            var levelInfo = SkillCardItem.GetLevel(currentScore);
+            return new SkillCardItem
+            {
+                Name = name,
+                Category = category,
+                Score = currentScore,
+                Delta = delta,
+                DeltaText = SkillCardItem.GetDeltaText(delta),
+                Level = levelInfo.Level,
+                LevelColor = levelInfo.Color
+            };
+        }
+
+        partial void OnSelectedTelemetryDateChanged(DateTime? value)
+        {
+            FilterTelemetryLogs();
+        }
+
+        private void FilterTelemetryLogs()
+        {
+            if (LlmLogs == null) return;
+            
+            var filtered = LlmLogs.AsEnumerable();
+            if (SelectedTelemetryDate.HasValue)
+            {
+                var date = SelectedTelemetryDate.Value.Date;
+                filtered = filtered.Where(l => l.Timestamp.ToLocalTime().Date == date);
+            }
+
+            var result = filtered.ToList();
+            FilteredLlmLogs = new ObservableCollection<LlmLog>(result);
+
+            TelTotalCalls = result.Count;
+            TelTotalTokens = result.Sum(l => l.TotalTokens);
+            TelAvgTokens = TelTotalCalls > 0 ? TelTotalTokens / TelTotalCalls : 0;
+            
+            var success = result.Count(l => l.IsSuccess);
+            TelSuccessRate = TelTotalCalls > 0 ? $"{(success * 100.0 / TelTotalCalls):F1}%" : "0%";
+        }
+
+        private void ShowAllTelemetry()
+        {
+            SelectedTelemetryDate = null;
         }
 
         private LiveChartsCore.SkiaSharpView.LineSeries<double> CreateLineSeries(string name, List<double> values, SkiaSharp.SKColor color)

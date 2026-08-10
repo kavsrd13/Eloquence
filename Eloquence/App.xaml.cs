@@ -80,6 +80,7 @@ namespace Eloquence
                     new TranscriptionService(),
                     EvalService
                 );
+                AudioService.SetBatchService(BatchEvalService);
 
                 TeamsService = new TeamsDetectorService();
                 TeamsService.OnCallStateChanged += (isActive) =>

@@ -15,6 +15,7 @@ namespace Eloquence.Models
         public string Model { get; set; } = string.Empty;
         public TimeSpan Latency { get; set; }
         public bool IsSuccess { get; set; }
+        public string AgentName { get; set; } = string.Empty;
         public string ErrorMessage { get; set; } = string.Empty;
     }
 }

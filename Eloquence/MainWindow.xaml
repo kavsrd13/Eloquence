@@ -69,70 +69,10 @@
             
             <!-- DASHBOARD TAB -->
             <TabItem Header="Dashboard" Padding="15,5">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="350"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    
-                    <!-- Info Bar -->
-                    <Border Grid.Row="0" Background="{DynamicResource CardBackgroundBrush}" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1" Margin="10,0,10,5" Padding="8" CornerRadius="4">
-                        <TextBlock FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center">
-                            <Run Text="📊 Scores kept permanently"/>
-                            <Run Text=" | "/>
-                            <Run Text="📝 Transcripts auto-deleted after 3 days"/>
-                            <Run Text=" | "/>
-                            <Run Text="🎙️ No audio is ever stored"/>
-                        </TextBlock>
-                    </Border>
-
-                    <!-- Charts -->
-                    <Grid Grid.Row="1">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        
-                        <!-- English Chart -->
-                        <Border Grid.Column="0" Background="{DynamicResource CardBackgroundBrush}" Margin="10" CornerRadius="10" Padding="10">
-                            <StackPanel>
-                                <TextBlock Text="English Communication" FontSize="18" FontWeight="Bold" Foreground="#60A5FA" HorizontalAlignment="Center" Margin="0,0,0,10"/>
-                                <lvc:PolarChart Series="{Binding EnglishSeries}" AngleAxes="{Binding EnglishAxes}" Height="280"/>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Tech Chart -->
-                        <Border Grid.Column="1" Background="{DynamicResource CardBackgroundBrush}" Margin="10" CornerRadius="10" Padding="10">
-                            <StackPanel>
-                                <TextBlock Text="Technical Mastery" FontSize="18" FontWeight="Bold" Foreground="#34D399" HorizontalAlignment="Center" Margin="0,0,0,10"/>
-                                <lvc:PolarChart Series="{Binding TechSeries}" AngleAxes="{Binding TechAxes}" Height="280"/>
-                            </StackPanel>
-                        </Border>
-                    </Grid>
-                    
-                    <!-- Data Grid -->
-                    <DataGrid Grid.Row="2" ItemsSource="{Binding Evaluations}" AutoGenerateColumns="False" 
-                              Margin="10" IsReadOnly="True" HeadersVisibility="Column" Background="{DynamicResource CardBackgroundBrush}" Foreground="{DynamicResource AppForegroundBrush}">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="50"/>
-                            <DataGridTextColumn Header="Transcript" Binding="{Binding TranscriptChunk}" Width="*"/>
-                        </DataGrid.Columns>
-                        <DataGrid.RowDetailsTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding LlmFeedbackJson}" TextWrapping="Wrap" Margin="10" FontFamily="Consolas" Foreground="{DynamicResource AppForegroundBrush}"/>
-                            </DataTemplate>
-                        </DataGrid.RowDetailsTemplate>
-                    </DataGrid>
-                </Grid>
-            </TabItem>
-
-            <!-- SUMMARY REPORT TAB -->
-            <TabItem Header="Summary Report" Padding="15,5">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="15">
                         
-                        <!-- Executive Summary Grid -->
+                        <!-- Top: Composite Scores -->
                         <Grid Margin="0,0,0,20">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -141,24 +81,90 @@
                             
                             <!-- English Summary -->
                             <Border Grid.Column="0" Background="#1E3A8A" Margin="0,0,10,0" CornerRadius="12" Padding="20">
-                                <StackPanel>
-                                    <TextBlock Text="English Performance" FontSize="18" FontWeight="Bold" Foreground="#BFDBFE" Margin="0,0,0,10"/>
-                                    <TextBlock Text="{Binding CurrentEngAvg, StringFormat='{}Score: {0}'}" FontSize="36" FontWeight="Black" Foreground="White"/>
-                                    <TextBlock Text="{Binding EngDelta}" FontSize="14" Foreground="#93C5FD" Margin="0,5,0,0"/>
-                                </StackPanel>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Text="English Communication" FontSize="18" FontWeight="Bold" Foreground="#BFDBFE" Margin="0,0,0,10"/>
+                                    <TextBlock Grid.Row="1" Text="{Binding CurrentEngAvg, StringFormat='{}{0}'}" FontSize="48" FontWeight="Black" Foreground="White"/>
+                                    <Border Grid.Row="2" Background="{Binding EngLevelColor}" HorizontalAlignment="Left" CornerRadius="4" Padding="8,4" Margin="0,5,0,10">
+                                        <TextBlock Text="{Binding EngLevel}" FontWeight="Bold" Foreground="White" FontSize="12"/>
+                                    </Border>
+                                    <TextBlock Grid.Row="3" Text="{Binding EngDelta}" FontSize="14" Foreground="#93C5FD"/>
+                                </Grid>
                             </Border>
 
                             <!-- Tech Summary -->
                             <Border Grid.Column="1" Background="#064E3B" Margin="10,0,0,0" CornerRadius="12" Padding="20">
-                                <StackPanel>
-                                    <TextBlock Text="Technical Accuracy" FontSize="18" FontWeight="Bold" Foreground="#A7F3D0" Margin="0,0,0,10"/>
-                                    <TextBlock Text="{Binding CurrentTechAvg, StringFormat='{}Score: {0}'}" FontSize="36" FontWeight="Black" Foreground="White"/>
-                                    <TextBlock Text="{Binding TechDelta}" FontSize="14" Foreground="#6EE7B7" Margin="0,5,0,0"/>
-                                </StackPanel>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Text="Technical Mastery" FontSize="18" FontWeight="Bold" Foreground="#A7F3D0" Margin="0,0,0,10"/>
+                                    <TextBlock Grid.Row="1" Text="{Binding CurrentTechAvg, StringFormat='{}{0}'}" FontSize="48" FontWeight="Black" Foreground="White"/>
+                                    <Border Grid.Row="2" Background="{Binding TechLevelColor}" HorizontalAlignment="Left" CornerRadius="4" Padding="8,4" Margin="0,5,0,10">
+                                        <TextBlock Text="{Binding TechLevel}" FontWeight="Bold" Foreground="White" FontSize="12"/>
+                                    </Border>
+                                    <TextBlock Grid.Row="3" Text="{Binding TechDelta}" FontSize="14" Foreground="#6EE7B7"/>
+                                </Grid>
                             </Border>
                         </Grid>
 
-                        <!-- Historical Trend Charts -->
+                        <!-- Middle: Skill Cards -->
+                        <TextBlock Text="Detailed Skills" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource AppForegroundBrush}" Margin="0,0,0,10"/>
+                        <ItemsControl ItemsSource="{Binding SkillCards}" Margin="0,0,0,20">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="3" IsItemsHost="True"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="{DynamicResource CardBackgroundBrush}" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1" CornerRadius="12" Margin="5" Padding="15">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            
+                                            <Grid Grid.Row="0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" Foreground="{DynamicResource AppForegroundBrush}"/>
+                                                <Border Grid.Column="1" Background="{Binding LevelColor}" CornerRadius="4" Padding="6,2" HorizontalAlignment="Right" Margin="10,0,0,0">
+                                                    <TextBlock Text="{Binding Level}" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                                                </Border>
+                                            </Grid>
+                                            
+                                            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,15,0,15" VerticalAlignment="Bottom">
+                                                <TextBlock Text="{Binding Score}" FontSize="32" FontWeight="Black" Foreground="{DynamicResource AppForegroundBrush}"/>
+                                                <TextBlock Text="/100" FontSize="14" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Bottom" Margin="2,0,0,6"/>
+                                            </StackPanel>
+                                            
+                                            <Grid Grid.Row="2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <ProgressBar Grid.Column="0" Value="{Binding Score}" Maximum="100" Height="6" Foreground="{Binding LevelColor}" Background="{DynamicResource CardBorderBrush}" BorderThickness="0" Margin="0,0,10,0"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding DeltaText}" FontSize="12" FontWeight="SemiBold" Foreground="{Binding LevelColor}"/>
+                                            </Grid>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- Bottom: Historical Trend Charts -->
                         <Grid Margin="0,0,0,20">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -188,15 +194,53 @@
                 <Grid Margin="10">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     
-                    <TextBlock Grid.Row="0" Text="LLM Token Usage &amp; Telemetry" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource AppForegroundBrush}" Margin="0,0,0,15"/>
+                    <Grid Grid.Row="0" Margin="0,0,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="LLM Token Usage &amp; Telemetry" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource AppForegroundBrush}"/>
+                        <DatePicker Grid.Column="1" SelectedDate="{Binding SelectedTelemetryDate}" Margin="0,0,10,0"/>
+                        <Button Grid.Column="2" Content="All Time" Command="{Binding ShowAllTelemetryCommand}" Padding="10,5" Background="{DynamicResource CardBackgroundBrush}" Foreground="{DynamicResource AppForegroundBrush}" BorderBrush="{DynamicResource CardBorderBrush}"/>
+                    </Grid>
+
+                    <UniformGrid Grid.Row="1" Columns="4" Margin="0,0,0,15">
+                        <Border Background="{DynamicResource CardBackgroundBrush}" CornerRadius="8" Padding="15" Margin="5">
+                            <StackPanel>
+                                <TextBlock Text="Total Tokens" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                <TextBlock Text="{Binding TelTotalTokens}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource PrimaryAccentBrush}"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Background="{DynamicResource CardBackgroundBrush}" CornerRadius="8" Padding="15" Margin="5">
+                            <StackPanel>
+                                <TextBlock Text="Total Calls" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                <TextBlock Text="{Binding TelTotalCalls}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource PrimaryAccentBrush}"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Background="{DynamicResource CardBackgroundBrush}" CornerRadius="8" Padding="15" Margin="5">
+                            <StackPanel>
+                                <TextBlock Text="Avg Tokens/Call" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                <TextBlock Text="{Binding TelAvgTokens}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource PrimaryAccentBrush}"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Background="{DynamicResource CardBackgroundBrush}" CornerRadius="8" Padding="15" Margin="5">
+                            <StackPanel>
+                                <TextBlock Text="Success Rate" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                <TextBlock Text="{Binding TelSuccessRate}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource PrimaryAccentBrush}"/>
+                            </StackPanel>
+                        </Border>
+                    </UniformGrid>
                     
-                    <DataGrid Grid.Row="1" ItemsSource="{Binding LlmLogs}" AutoGenerateColumns="False" 
+                    <DataGrid Grid.Row="2" ItemsSource="{Binding FilteredLlmLogs}" AutoGenerateColumns="False" 
                               IsReadOnly="True" HeadersVisibility="Column" Background="{DynamicResource CardBackgroundBrush}" Foreground="{DynamicResource AppForegroundBrush}">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Time (UTC)" Binding="{Binding Timestamp, StringFormat='{}{0:G}'}" Width="150"/>
+                            <DataGridTextColumn Header="Agent" Binding="{Binding AgentName}" Width="120"/>
                             <DataGridTextColumn Header="Model" Binding="{Binding Model}" Width="150"/>
                             <DataGridTextColumn Header="Prompt Tokens" Binding="{Binding PromptTokens}" Width="120"/>
                             <DataGridTextColumn Header="Completion Tokens" Binding="{Binding CompletionTokens}" Width="130"/>
