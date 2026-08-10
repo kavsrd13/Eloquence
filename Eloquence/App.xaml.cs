@@ -108,6 +108,13 @@ namespace Eloquence
                 // Start polling for Teams calls instead of always recording
                 TeamsService.Start();
 
+                // Auto-evaluate any pending transcripts from previous sessions in the background
+                Task.Run(async () => 
+                {
+                    await Task.Delay(5000); // Wait 5s for UI to load
+                    await BatchEvalService.EvaluatePendingTranscriptsAsync();
+                });
+
                 try
                 {
                     _notifyIcon = (IDisposable)FindResource("NotifyIcon");
