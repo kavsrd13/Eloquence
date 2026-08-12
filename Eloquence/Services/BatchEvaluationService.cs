@@ -43,9 +43,9 @@ namespace Eloquence.Services
                 int totalPendingWords = pendingRecords.Sum(r => r.Text.Split(new[] { ' ', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries).Length);
                 
                 // Only evaluate if we have enough context (to save on system prompt API costs) or if forced
-                if (!force && totalPendingWords < 1000)
+                if (!force && totalPendingWords < 2000)
                 {
-                    OnStatusChanged?.Invoke($"Batch Evaluation: Buffering ({totalPendingWords}/1000 words).");
+                    OnStatusChanged?.Invoke($"Batch Evaluation: Buffering ({totalPendingWords}/2000 words).");
                     return;
                 }
 
@@ -74,7 +74,7 @@ namespace Eloquence.Services
                     return;
                 }
 
-                // Group records into chunks of ~1500 words to avoid token limits
+                // Group records into chunks of ~2000 words to avoid token limits
                 var batches = new List<List<TranscriptRecord>>();
                 var currentBatch = new List<TranscriptRecord>();
                 int currentWordCount = 0;
@@ -82,7 +82,7 @@ namespace Eloquence.Services
                 foreach (var record in pendingRecords)
                 {
                     int words = record.Text.Split(new[] { ' ', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries).Length;
-                    if (currentWordCount + words > 1500 && currentBatch.Any())
+                    if (currentWordCount + words > 2000 && currentBatch.Any())
                     {
                         batches.Add(currentBatch);
                         currentBatch = new List<TranscriptRecord>();
